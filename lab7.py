@@ -21,6 +21,10 @@ class User:
         self.user_type = input("Enter user type (student, instructor, or admin): ") 
     
     # Login
+    # get email from the user
+    # get list of all users from the database
+    # check if user's email matches
+    # log the user in if the email matches
     def login(self, email):
         cursor.execute("""SELECT * FROM '%s' WHERE EMAIL='%s';""" % (self.user_type, email))
         response = cursor.fetchall()
@@ -31,6 +35,8 @@ class User:
             print("You have logged in")
     
     # Logout
+    # check if the user is already logged in
+    # log the user out only if the user is logged in
     def logout(self):
         if self.logged_in is True:
             self.logged_in = False
@@ -39,6 +45,8 @@ class User:
             print("You have not logged in")
 
     # Search for courses (all or based on some parameter)
+    # get details on course such as crn, title, etc.
+    # retrieve all courses from the database as soon as there is a single match with any of the inputs
     def searchCourses(self, crn, title, department, time, day, semester, year, credits, instructor):
         cursor.execute("""SELECT * FROM COURSE WHERE CRN = '%d' OR TITLE = '%s' OR DEPARTMENT = '%s' OR TIME = '%d' OR DAY = '%s' OR SEMESTER = '%s' OR YEAR = '%d' OR CREDITS = '%d' OR INSTRUCTOR = '%s';""" % (crn, title, department, time, day, semester, year, credits, instructor)) 
 
@@ -54,6 +62,9 @@ class Student(User):
         self.id = id
   
     # Add/remove course from semester schedule (based on course ID number)
+    # get course list for student
+    # add CRN for new course or remove CRN for a given course
+    # update the student's course list in the database
     def addCourse(self, courseID):
         cursor.execute("""SELECT `COURSE LIST` FROM STUDENT WHERE ID='%d';""" % self.id)
         response = cursor.fetchall()
@@ -73,6 +84,9 @@ class Student(User):
         cursor.execute("""UPDATE STUDENT SET 'COURSE LIST'='%s' WHERE ID='%d';""" % (course_list, self.id))
 
     # Check conflicts in course schedule
+    # get course list for the student
+    # go to the COURSE database and check times for two different courses
+    # if the times match, there is conflict and tell the user you cannot take both classes at the same time
     def checkConflicts(self):
         cursor.execute("""SELECT `COURSE LIST` FROM STUDENT WHERE ID='%d';""" % self.id)
         response = cursor.fetchall()
@@ -94,6 +108,8 @@ class Student(User):
         
 
     # Print individual schedule
+    # get course list for the student
+    # go to COURSE table and retrieve time and day for all courses for that student
     def printSchedule(self):
         cursor.execute("""SELECT `COURSE LIST` FROM STUDENT WHERE ID='%d';""" % self.id)
         response = cursor.fetchall()
@@ -117,6 +133,9 @@ class Instructor(User):
         self.id = id
           
     # Print course teaching schedule
+    # go to the COURSE table and find all courses taught by the given isntructor
+    # retrieve the time and day for these courses
+    # this is the schedule for the given instructor
     def printSchedule(self):
         fullname = self.firstname + " " + self.lastname
         cursor.execute("""SELECT TITLE, TIME, DAY FROM COURSE WHERE INSTRUCTOR='%s';""" % fullname)
@@ -125,6 +144,10 @@ class Instructor(User):
             print(s)
 
     # Print/search course roster(s)
+    # go to the COURSE table and find all courses taught by the given instructor
+    # go to the STUDENT table and retrienve the names and course list for all students
+    # check to see if any course that is part of a student's schedule is taught by the given professor
+    # if yes, add that student to the instructor's roster for that course
     def printRoster(self):
         fullname = self.firstname + " " + self.lastname
         cursor.execute("""SELECT CRN, TITLE FROM COURSE WHERE INSTRUCTOR='%s';""" % fullname)
@@ -162,22 +185,34 @@ class Admin(User):
         self.id = id
           
     # Add courses to the system
+    # get course details as the input - CRN, title, etc.
+    # insert a new row in the COURSE table with all the course details
     def addCourse(self, crn, title, department, time, day, semester, year, credits, instructor):
         cursor.execute("""INSERT INTO COURSE VALUES('%d', '%s', '%s', '%d', '%s', '%s', '%d', '%d', '%s');""" % (crn, title, department, time, day, semester, year, credits, instructor))
 
     # Remove courses from the system
+    # get title of the course to delete from the system
+    # go to the COURSE table and find that course
+    # delete that course from the COURSE table
     def removeCourse(self, title):
         cursor.execute("""DELETE FROM COURSE WHERE title = '%s';""" % title)
         
     # Add instructor
+    # get instructor details as the input - id, name, etc.
+    # insert a new row in the INSTRUCTOR table with all the instructor details
     def addInstructor(self, id, name, surname, title, hireyear, department, email):
         cursor.execute("""INSERT INTO INSTRUCTOR VALUES('%d', '%s', '%s', '%s', '%d', '%s', '%s');""" % (id, name, surname, title, hireyear, department, email))
 
     # Add student
+    # get student details as the input - id, name, etc.
+    # insert a new row in the STUDENT table with all the student details
     def addStudent(self, id, name, surname, gradyear, major, email, course_list):
         cursor.execute("""INSERT INTO STUDENT VALUES('%d', '%s', '%s', '%d', '%s', '%s', '%s');""" % (id, name, surname, gradyear, major, email, course_list))
 
-    # Link instructor/student to course
+    # Link student to course
+    # go to the STUDENT table get the course list for the student
+    # to the student's course list, add the CRN for the course you want to link to the student
+    # update the student's course list in the database with this new course list
     def linkStudent(self, studentID, CRN):
         cursor.execute("""SELECT `COURSE LIST` FROM STUDENT WHERE ID='%d';""" % studentID)
         response = cursor.fetchall()
@@ -188,6 +223,9 @@ class Admin(User):
         cursor.execute("""UPDATE STUDENT SET 'COURSE LIST'='%s' WHERE ID='%d';""" % (course_list, studentID))
     
     # Unlink student from course
+    # go to the STUDENT table and get the course list for the student
+    # in the student's course list, remove the CRN for the course you want to unlink from the student
+    # update the student's course list in the database with this new course list
     def unlinkStudent(self, studentID, CRN):
         cursor.execute("""SELECT `COURSE LIST` FROM STUDENT WHERE ID='%d';""" % studentID)
         response = cursor.fetchall()
@@ -197,15 +235,20 @@ class Admin(User):
 
         cursor.execute("""UPDATE STUDENT SET 'COURSE LIST'='%s' WHERE ID='%d';""" % (course_list, studentID))
     
-    # link instructor from course
+    # Link instructor from course
+    # go to the COURSE table and find the course which matches the given CRN
+    # update the instructor for this course with the given instructor
     def linkInstructor(self, instructorName, CRN):
         cursor.execute("""UPDATE COURSE SET INSTRUCTOR='%s' WHERE CRN='%d';""" % (instructorName, CRN))
 
     # Unlink instructor from course
+    # go to the COURSE table and find the course which matches the given CRN
+    # remove the instructor for this course by adding '---' as the instructor for this course
     def unlinkInstructor(self, instructorName, CRN):
         cursor.execute("""UPDATE COURSE SET INSTRUCTOR='%s' WHERE INSTRUCTOR='%s' AND CRN='%d';""" % ('---', instructorName, CRN))
 
-
+# Creating objects for each class - User, Student, Instructor, and Admin
+# and testing methods that belong to each class with varying user inputs
 # User class demo
 isaac = User('Isaac', 'Newton', 10001, 'student')
 email = 'newtoni'
