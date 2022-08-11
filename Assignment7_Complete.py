@@ -5,20 +5,6 @@ cursor = database.cursor()
 ####### Add a column under courses names PROFESSOR
 ####### Insert professor names into column
 
-cursor.execute("""ALTER TABLE COURSE DROP COLUMN PROFESSOR""")
-cursor.execute(""" UPDATE COURSE SET PROFESSOR = 'Alan Turing' WHERE DEPARTMENT = 'BSCO'; """) 
-
-
-
-
-
-
-
-
-
-
-
-
 
 # 1 • Add/remove course from semester schedule (based on course ID number).
 
@@ -48,10 +34,10 @@ def add_remove_course_from_schedule():
 def print_course():
     print("You have selected option 2. Assemble and print course roster (instructor).")
     instructor = input("Enter the name of the instructor: \n")
-    cursor.execute("""SELECT * FROM COURSE WHERE INSTRUCTOR = '%s';""" % (instructor)) 
+    cursor.execute("""SELECT * FROM COURSE WHERE PROFESSOR = '%s';""" % (instructor)) 
     course_list = cursor.fetchall()
-    for course in course_list:
-        print(course)
+    for c in course_list:
+        print(c)
 
 # 3 • Add/remove courses from the system (admin). ##### DONE #########
 
@@ -75,6 +61,48 @@ def add_remove_course_from_system():
         #sql = """DELETE FROM COURSE WHERE CRN = '%s' """ 
         cursor.execute("""DELETE FROM COURSE WHERE CRN = '%d' ;""" % (course))
         print("The course has been deleted")
+
+# Add/Remove student/teacher from system
+def add_remove_student_teacher_from_schedule():
+    print("You have selected option 3. Add/remove student/teacher from the system (admin).")
+    choice = input("Select: Student (1) or Teacher (2) ")
+    choice = int(choice)
+    if choice == 1:
+        student = input("Enter student's first name: ")
+        student_last = input("Enter student's last name: ")
+        print(student, student_last)
+        choice2 = input("Do you want to add or remove this student: ")
+        choice2 = int(choice2)
+        if choice2 == 1:
+            id = input("ID: ")
+            gradyear = input("GRADYEAR: ")
+            major = input("MAJOR: ")
+            email = input("EMAIL: ")
+            cursor.execute("""INSERT INTO STUDENT (ID, NAME, SURNAME, GRADYEAR, MAJOR, EMAIL ) VALUES (?,?,?,?,?, ?)""" , (id, student, student_last, gradyear, major, email) )
+        elif choice2 == 2:
+            cursor.execute("""DELETE FROM STUDENT WHERE NAME = '%s' ;""" % (student))
+            print("The student has been deleted")
+    elif choice == 2:
+        teacher = input("Enter teacher's first name: ")
+        teacher_last = input("Enter student's last name: ")
+        print(teacher, teacher_last)
+        choice2 = input("Do you want to add or remove this teacher: ")
+        choice2 = int(choice2)
+        if choice2 == 1:
+            id = input("ID: ")
+            title = input("TITLE: ")
+            hireyear = input("HIREYEAR: ")
+            dept = input("DEPARTMENT: ")
+            email = input("EMAIL: ")
+            cursor.execute("""INSERT INTO INSTRUCTOR (ID, NAME, SURNAME, TITLE, HIREYEAR,DEPT, EMAIL ) VALUES (?,?,?,?,?, ?)""" , (id, teacher, teacher_last, hireyear, dept, email) )
+        elif choice2 == 2:
+            cursor.execute("""DELETE FROM INSTRUCTOR WHERE NAME = '%s' ;""" % (teacher))
+            print("The instructor has been deleted")
+
+
+
+
+
 
 # 5 • Search all courses (all users) . ###### DONE #########
 
@@ -118,11 +146,11 @@ def log_in_log_out():
         user_input = input("Please select an option \n 1. Add/remove course from semester schedule (based on course ID number). \n 2. Search all courses (all users). \n 3. Search courses based on parameters (all users): \n")
         user_input = int(user_input)
         if user_input == 1:
-            add_remove_course_from_schedule()
+            add_remove_course_from_schedule() ####### Good Enough #######
         elif user_input == 2:
-            search_all_courses() ### Works
-        elif user_input == 3:
-            search_specific_courses() ### Works
+            search_all_courses() ## Works 
+        elif user_input == 3: ## Works
+            search_specific_courses() 
 
     elif choice == 2:
         cursor.execute("""SELECT email FROM INSTRUCTOR WHERE email=?""", [name])
@@ -132,18 +160,18 @@ def log_in_log_out():
             user_input = input("Please select an option \n 1. Assemble and print course roster (instructor). \n 2. Search courses based on parameters (all users): \n 3. Search/Print teaching schedule \n")
             user_input = int(user_input)
             if user_input == 1:
-                print_course()
+                print_course()  ########## Good Enough ########
             elif user_input == 2:
                 search_specific_courses() ### Works
-            #elif user_input == 3:
-                ###### Search/Print Teaching schedule
-
+            elif user_input == 3: ## Works
+                print_course()
+                
     elif choice == 3:
         cursor.execute("""SELECT email FROM ADMIN WHERE email=?""", [name])
         for row in iter(cursor.fetchone, None):
             print(row)
             print("You are now logged in")
-            user_input = input("Please select an option \n 1. Add/remove courses from the system (admin). \n 2. Search all courses (all users). \n 3. Search courses based on parameters (all users): \n 4. Add/remove instructors/students from system \n 5. Link instructor/student to course \n")
+            user_input = input("Please select an option \n 1. Add/remove courses from the system (admin). \n 2. Search all courses (all users). \n 3. Search courses based on parameters (all users): \n 4. Add/remove instructors/students from system \n")
             user_input = int(user_input)
             if user_input == 1:
                 add_remove_course_from_system() ## Works
@@ -151,10 +179,9 @@ def log_in_log_out():
                 search_all_courses() ### Works
             elif user_input == 3:
                 search_specific_courses() ## Works
-            #elif user_input == 4:
-                ## add/remove instructor/teachers from system
-            #elif user_input == 5:
-                ## link instructor/student to course
+            elif user_input == 4:
+                add_remove_student_teacher_from_schedule() ## Works
+
       
  
 log_in = input("WELCOME, please log-in: ")
@@ -164,3 +191,4 @@ if log_in == 1:
 
 database.commit()
 database.close()
+
